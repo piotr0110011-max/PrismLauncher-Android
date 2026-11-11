@@ -1,0 +1,60 @@
+name: Android Build
+
+on:
+  push:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK and Build Tools
+        run: |
+          sdkmanager "ndk;26.1.10909125" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install Qt 6 for Android
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.8.0'
+          target: 'android'
+          arch: 'android_arm64_v8a'
+
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Configure CMake
+        run: |
+          export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/26.1.10909125
+          cmake -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-26 \
+            -DANDROID_STL=c++_shared \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLauncher_BUILD_PLATFORM="android" \
+            -DENABLE_LTO=OFF
+
+      - name: Build Prism Launcher
+        run: cmake --build build --parallel
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrismLauncher-Android
+          path: build/**/*.apk
