@@ -33,8 +33,15 @@ jobs:
           target: 'android'
           arch: 'android_arm64_v8a'
 
-      - name: Install Ninja & Tools
-        run: sudo apt-get update && sudo apt-get install -y ninja-build libgl1-mesa-dev
+      - name: Install Build Dependencies & ECM
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            ninja-build \
+            libgl1-mesa-dev \
+            extra-cmake-modules \
+            libcmark-dev \
+            libarchive-dev \
+            libqrencode-dev
 
       - name: Configure CMake
         run: |
@@ -46,6 +53,9 @@ jobs:
             -DANDROID_STL=c++_shared \
             -DCMAKE_BUILD_TYPE=Release \
             -DLauncher_BUILD_PLATFORM="android" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH \
+            -DECM_DIR=/usr/share/ECM/cmake \
             -DENABLE_LTO=OFF
 
       - name: Build Prism Launcher
